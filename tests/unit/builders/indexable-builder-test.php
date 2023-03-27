@@ -196,10 +196,12 @@ class Indexable_Builder_Test extends TestCase {
 	 * @covers ::ensure_indexable
 	 */
 	public function test_build_for_id_and_type_with_post_given_and_no_author_indexable_found() {
+		// Executed in save_indexable.
 		$this->indexable
 			->expects( 'save' )
 			->once();
 
+		// Executed in deep_copy_indexable
 		$this->indexable
 			->expects( 'as_array' )
 			->once()
@@ -216,6 +218,7 @@ class Indexable_Builder_Test extends TestCase {
 			->with( [] )
 			->andReturn( $this->indexable );
 
+		// Executed in build when object_type = 'post'.
 		$this->post_builder
 			->expects( 'build' )
 			->once()
@@ -1076,5 +1079,183 @@ class Indexable_Builder_Test extends TestCase {
 		$result = $instance->exposed_save_indexable( $this->indexable, null );
 
 		$this->assertSame( $this->indexable, $result );
+	}
+
+	/**
+	 * Tests building an indexable with object_sub_type = 'attachment'.
+	 *
+	 * @covers ::__construct
+	 * @covers ::set_indexable_repository
+	 * @covers ::build_for_id_and_type
+	 * @covers ::ensure_indexable
+	 */
+	public function test_build_for_id_and_type_with_post_attachment() {
+
+		$this->indexable->object_sub_type = 'attachment';
+		// Executed in save_indexable.
+		$this->indexable
+			->expects( 'save' )
+			->once();
+
+		// Executed in deep_copy_indexable
+		$this->indexable
+			->expects( 'as_array' )
+			->once()
+			->andReturn( [] );
+
+		$this->indexable_repository
+			->expects( 'query' )
+			->twice()
+			->andReturnSelf();
+
+		$this->indexable_repository
+			->expects( 'create' )
+			->once()
+			->with( [] )
+			->andReturn( $this->indexable );
+
+		// Executed 'post'.
+		$this->post_builder
+			->expects( 'build' )
+			->once()
+			->with( 1337, $this->indexable )
+			->andReturn( $this->indexable );
+
+		// Executed when object_sub_type = 'attachment'
+		$this->link_builder
+			->expects( 'patch_seo_links' )
+			->once()
+			->with( $this->indexable );
+
+		$this->primary_term_builder
+			->expects( 'build' )
+			->once()
+			->with( 1337 );
+		$this->hierarchy_builder
+			->expects( 'build' )
+			->once()
+			->with( $this->indexable )
+			->andReturn( $this->indexable );
+
+		$this->indexable_helper
+			->expects( 'should_index_indexables' )
+			->twice()
+			->withNoArgs()
+			->andReturnTrue();
+
+		$this->indexable_repository
+			->expects( 'find_by_id_and_type' )
+			->once()
+			->with( 1999, 'user', false )
+			->andReturnFalse();
+
+		$author_indexable = Mockery::mock( Indexable_Mock::class );
+		$author_indexable
+			->expects( 'save' )
+			->once();
+
+		$this->indexable_repository
+			->expects( 'create' )
+			->with(
+				[
+					'object_type' => 'user',
+					'object_id'   => 1999,
+				]
+			)
+			->once()
+			->andReturn( $author_indexable );
+
+		$result = $this->instance->build_for_id_and_type( 1337, 'post', $this->indexable );
+
+		$this->assertSame( $this->indexable, $result );
+	}
+
+	/**
+	 * Tests building an indexable with object_sub_type = 'attachment' but not saving it.
+	 *
+	 * @covers ::deep_copy_indexable
+	 * @covers ::build
+	 */
+	public function test_build() {
+
+		// Executed in deep_copy_indexable
+		$this->indexable
+			->expects( 'as_array' )
+			->once()
+			->andReturn( [] );
+
+		$this->indexable_repository
+			->expects( 'query' )
+			->once()
+			->andReturnSelf();
+
+		$this->indexable_repository
+			->expects( 'create' )
+			->once()
+			->with( [] )
+			->andReturn( $this->indexable );
+
+		// Executed 'post' in build.
+		$this->post_builder
+			->expects( 'build' )
+			->once()
+			->with( 1337, $this->indexable )
+			->andReturn( false );
+
+		$result = $this->instance->build( $this->indexable );
+
+		$this->assertFalse( $result );
+	}
+
+	/**
+	 * Tests building an indexable for a system page.
+	 *
+	 * @covers ::__construct
+	 * @covers ::set_indexable_repository
+	 * @covers ::build_for_system_page
+	 * @covers ::ensure_indexable
+	 */
+	public function test_build_system_page() {
+
+		$this->indexable->object_type = 'system-page';
+			// Executed in deep_copy_indexable
+			$this->indexable
+			->expects( 'as_array' )
+			->once()
+			->andReturn( [] );
+
+		$this->indexable_repository
+			->expects( 'query' )
+			->once()
+			->andReturnSelf();
+
+		$this->indexable_repository
+			->expects( 'create' )
+			->once()
+			->with( [] )
+			->andReturn( $this->indexable );
+
+		// Executed 'post' in build.
+		$this->system_page_builder
+			->expects( 'build' )
+			->once()
+			->with( 'object_sub_type', $this->indexable )
+			->andReturn( $this->indexable );
+
+			$this->indexable_helper
+			->expects( 'should_index_indexables' )
+			->twice()
+			->withNoArgs()
+			->andReturnTrue();
+	
+			$this->indexable
+			->expects( 'save' )
+			->once();
+		
+		$result = $this->instance->build( $this->indexable );
+
+		$this->assertSame( $this->indexable, $result );
+
+		
 	}
 }
