@@ -189,6 +189,8 @@ class Indexable_Link_Builder {
 	/**
 	 * Gathers all links from content.
 	 *
+	 * @codeCoverageIgnore
+	 *
 	 * @param string $content The content.
 	 *
 	 * @return string[] An array of urls.
@@ -214,6 +216,8 @@ class Indexable_Link_Builder {
 	/**
 	 * Gathers all images from content.
 	 *
+	 * @codeCoverageIgnore
+	 *
 	 * @param string $content The content.
 	 *
 	 * @return string[] An array of urls.
@@ -238,6 +242,8 @@ class Indexable_Link_Builder {
 
 	/**
 	 * Creates link models from lists of URLs and image sources.
+	 *
+	 * @codeCoverageIgnore
 	 *
 	 * @param Indexable $indexable The indexable.
 	 * @param string[]  $links     The link URLs.
@@ -274,6 +280,8 @@ class Indexable_Link_Builder {
 	/**
 	 * Get the post ID based on the link's type and its target's permalink.
 	 *
+	 * @codeCoverageIgnore
+	 *
 	 * @param string $type      The type of link (either SEO_Links::TYPE_INTERNAL or SEO_Links::TYPE_INTERNAL_IMAGE).
 	 * @param string $permalink The permalink of the link's target.
 	 *
@@ -289,6 +297,8 @@ class Indexable_Link_Builder {
 
 	/**
 	 * Creates an internal link.
+	 *
+	 * @codeCoverageIgnore
 	 *
 	 * @param string    $url       The url of the link.
 	 * @param array     $home_url  The home url, as parsed by wp_parse_url.
@@ -365,6 +375,8 @@ class Indexable_Link_Builder {
 	/**
 	 * Enhances the link model with information from its indexable.
 	 *
+	 * @codeCoverageIgnore
+	 *
 	 * @param SEO_Links $model     The link's model.
 	 * @param string    $permalink The link's permalink.
 	 *
@@ -401,6 +413,8 @@ class Indexable_Link_Builder {
 	/**
 	 * Builds the link's permalink.
 	 *
+	 * @codeCoverageIgnore
+	 *
 	 * @param string $url      The url of the link.
 	 * @param array  $home_url The home url, as parsed by wp_parse_url.
 	 *
@@ -419,6 +433,8 @@ class Indexable_Link_Builder {
 
 	/**
 	 * Filters out links that point to the same page with a fragment or query.
+	 *
+	 * @codeCoverageIgnore
 	 *
 	 * @param SEO_Links $link        The link.
 	 * @param array     $current_url The url of the page the link is on, as parsed by wp_parse_url.
@@ -444,6 +460,8 @@ class Indexable_Link_Builder {
 
 	/**
 	 * Updates the link counts for related indexables.
+	 *
+	 * @codeCoverageIgnore
 	 *
 	 * @param Indexable   $indexable The indexable.
 	 * @param SEO_Links[] $links     The link models.
@@ -488,6 +506,8 @@ class Indexable_Link_Builder {
 	/**
 	 * Creates a diff between two arrays of SEO links, based on urls.
 	 *
+	 * @codeCoverageIgnore
+	 *
 	 * @param SEO_Links[] $links_a The array to compare.
 	 * @param SEO_Links[] $links_b The array to compare against.
 	 *
@@ -505,6 +525,8 @@ class Indexable_Link_Builder {
 
 	/**
 	 * Returns the number of internal links in an array of link models.
+	 *
+	 * @codeCoverageIgnore
 	 *
 	 * @param SEO_Links[] $links The link models.
 	 *
@@ -524,6 +546,8 @@ class Indexable_Link_Builder {
 
 	/**
 	 * Returns a cleaned permalink for a given link.
+	 *
+	 * @codeCoverageIgnore
 	 *
 	 * @param string $link     The raw URL.
 	 * @param array  $home_url The home URL, as parsed by wp_parse_url.
@@ -557,6 +581,8 @@ class Indexable_Link_Builder {
 
 	/**
 	 * Updates incoming link counts for related indexables.
+	 *
+	 * @codeCoverageIgnore
 	 *
 	 * @param int[] $related_indexable_ids The IDs of all related indexables.
 	 *
