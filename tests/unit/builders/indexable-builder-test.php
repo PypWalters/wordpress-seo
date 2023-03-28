@@ -19,6 +19,7 @@ use Yoast\WP\SEO\Exceptions\Indexable\Invalid_Term_Exception;
 use Yoast\WP\SEO\Exceptions\Indexable\Post_Not_Found_Exception;
 use Yoast\WP\SEO\Helpers\Indexable_Helper;
 use Yoast\WP\SEO\Models\Indexable;
+use Yoast\WP\SEO\Exceptions\Indexable\Source_Exception;
 use Yoast\WP\SEO\Repositories\Indexable_Repository;
 use Yoast\WP\SEO\Services\Indexables\Indexable_Version_Manager;
 use Yoast\WP\SEO\Tests\Unit\Doubles\Builders\Indexable_Builder_Double;
@@ -201,7 +202,7 @@ class Indexable_Builder_Test extends TestCase {
 			->expects( 'save' )
 			->once();
 
-		// Executed in deep_copy_indexable
+		// Executed in deep_copy_indexable.
 		$this->indexable
 			->expects( 'as_array' )
 			->once()
@@ -846,37 +847,74 @@ class Indexable_Builder_Test extends TestCase {
 	}
 
 	/**
+	 * Provider for test_build_for_system_page.
+	 *
+	 * @return array The test data.
+	 */
+	public function build_for_system_page_provider() {
+		return [
+			[ true, 1 ],
+			[ false, 0 ],
+		];
+	}
+
+	/**
 	 * Tests building an indexable for a system page.
 	 *
 	 * @covers ::__construct
 	 * @covers ::set_indexable_repository
 	 * @covers ::build_for_system_page
 	 * @covers ::ensure_indexable
+	 * @covers ::build
+	 * @covers ::deep_copy_indexable
+	 * @covers ::save_indexable
+	 *
+	 * @dataProvider build_for_system_page_provider
+	 *
+	 * @param bool $should_index_indexables Return value for indexable_helper->should_index_indexables().
+	 * @param int  $save_times The times insdexable->save() should be called.
 	 */
-	public function test_build_for_system_page() {
-		$this->indexable->object_type     = 'system_page';
+	public function test_build_for_system_page( $should_index_indexables, $save_times ) {
+		$this->indexable->object_type     = 'system-page';
 		$this->indexable->object_sub_type = '404';
+
+		// Executed inside deep_copy_indexable inside build.
 		$this->indexable
 			->expects( 'as_array' )
 			->once()
 			->andReturn( [] );
 
+		// Executed inside deep_copy_indexable inside build.
 		$this->indexable_repository
 			->expects( 'query' )
 			->once()
 			->andReturnSelf();
 
+		// Executed inside deep_copy_indexable inside build.
 		$this->indexable_repository
 			->expects( 'create' )
 			->once()
 			->with( [] )
 			->andReturn( $this->indexable );
 
+		// Executed inside build inside switch statment for system pages.
+		$this->system_page_builder
+			->expects( 'build' )
+			->once()
+			->with( '404', $this->indexable )
+			->andReturn( $this->indexable );
+
+		// Executed inside save_indexable inside build.
 		$this->indexable_helper
 			->expects( 'should_index_indexables' )
 			->once()
 			->withNoArgs()
-			->andReturnFalse();
+			->andReturn( $should_index_indexables );
+
+		// Executed inside save_indexable inside build.
+		$this->indexable
+			->expects( 'save' )
+			->times( $save_times );
 
 		$this->assertSame( $this->indexable, $this->instance->build_for_system_page( '404', $this->indexable ) );
 	}
@@ -1087,6 +1125,7 @@ class Indexable_Builder_Test extends TestCase {
 	 * @covers ::__construct
 	 * @covers ::set_indexable_repository
 	 * @covers ::build_for_id_and_type
+	 * @covers ::build
 	 * @covers ::ensure_indexable
 	 */
 	public function test_build_for_id_and_type_with_post_attachment() {
@@ -1097,7 +1136,7 @@ class Indexable_Builder_Test extends TestCase {
 			->expects( 'save' )
 			->once();
 
-		// Executed in deep_copy_indexable
+		// Executed in deep_copy_indexable.
 		$this->indexable
 			->expects( 'as_array' )
 			->once()
@@ -1121,7 +1160,7 @@ class Indexable_Builder_Test extends TestCase {
 			->with( 1337, $this->indexable )
 			->andReturn( $this->indexable );
 
-		// Executed when object_sub_type = 'attachment'
+		// Executed when object_sub_type = 'attachment'.
 		$this->link_builder
 			->expects( 'patch_seo_links' )
 			->once()
@@ -1171,14 +1210,17 @@ class Indexable_Builder_Test extends TestCase {
 	}
 
 	/**
-	 * Tests building an indexable with object_sub_type = 'attachment' but not saving it.
+	 * Tests building an indexable for a term.
 	 *
-	 * @covers ::deep_copy_indexable
+	 * @covers ::__construct
+	 * @covers ::set_indexable_repository
+	 * @covers ::build_for_id_and_type
 	 * @covers ::build
+	 * @covers ::ensure_indexable
 	 */
-	public function test_build() {
-
-		// Executed in deep_copy_indexable
+	public function test_build_for_id_and_type_with_term_exception() {
+		$this->indexable->object_type = 'term';
+		$this->indexable->object_id   = null;
 		$this->indexable
 			->expects( 'as_array' )
 			->once()
@@ -1195,67 +1237,13 @@ class Indexable_Builder_Test extends TestCase {
 			->with( [] )
 			->andReturn( $this->indexable );
 
-		// Executed 'post' in build.
-		$this->post_builder
+		$this->term_builder
 			->expects( 'build' )
 			->once()
-			->with( 1337, $this->indexable )
-			->andReturn( false );
+			->with( null, $this->indexable )
+			->andThrows( Source_Exception::class );
 
-		$result = $this->instance->build( $this->indexable );
 
-		$this->assertFalse( $result );
-	}
-
-	/**
-	 * Tests building an indexable for a system page.
-	 *
-	 * @covers ::__construct
-	 * @covers ::set_indexable_repository
-	 * @covers ::build_for_system_page
-	 * @covers ::ensure_indexable
-	 */
-	public function test_build_system_page() {
-
-		$this->indexable->object_type = 'system-page';
-			// Executed in deep_copy_indexable
-			$this->indexable
-			->expects( 'as_array' )
-			->once()
-			->andReturn( [] );
-
-		$this->indexable_repository
-			->expects( 'query' )
-			->once()
-			->andReturnSelf();
-
-		$this->indexable_repository
-			->expects( 'create' )
-			->once()
-			->with( [] )
-			->andReturn( $this->indexable );
-
-		// Executed 'post' in build.
-		$this->system_page_builder
-			->expects( 'build' )
-			->once()
-			->with( 'object_sub_type', $this->indexable )
-			->andReturn( $this->indexable );
-
-			$this->indexable_helper
-			->expects( 'should_index_indexables' )
-			->twice()
-			->withNoArgs()
-			->andReturnTrue();
-	
-			$this->indexable
-			->expects( 'save' )
-			->once();
-		
-		$result = $this->instance->build( $this->indexable );
-
-		$this->assertSame( $this->indexable, $result );
-
-		
+		$this->assertFalse( $this->instance->build_for_id_and_type( 1337, 'term', $this->indexable ) );
 	}
 }
