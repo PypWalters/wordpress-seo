@@ -65,6 +65,8 @@ class Indexing_Notification_Presenter extends Abstract_Presenter {
 	/**
 	 * Determines the message to show in the indexing notification.
 	 *
+	 * @codeCoverageIgnore
+	 *
 	 * @param string $reason The reason identifier.
 	 *
 	 * @return string The message to show in the notification.
